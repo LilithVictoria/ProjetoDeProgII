@@ -1,0 +1,253 @@
+#include <iostream>
+#include <string>
+#include <cstdlib> // Para system("clear") em sistemas Unix-like ou system("cls") em Windows
+#include <locale>  // Para setlocale
+#include <limits>  // Para numeric_limits
+
+using namespace std;
+
+void limparTela()
+{
+#ifdef _WIN32
+    system("cls");
+#else
+    system("clear");
+#endif
+}
+
+void limparBufferEntrada()
+{
+    cin.clear();
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+}
+
+void inicializarTabuleiro(int tabuleiro[][3])
+{
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+            tabuleiro[i][j] = 0;
+}
+
+char simboloBloco(int bloco)
+{
+    if (bloco == 0)
+        return ' ';
+    else if (bloco == 1)
+        return 'X';
+    else
+        return 'O';
+}
+
+void mostrarTabuleiro(int tabuleiro[][3])
+{
+    cout << endl;
+    for (int linha = 0; linha < 3; linha++)
+    {
+        cout << " " << simboloBloco(tabuleiro[linha][0]) << " |";
+        cout << " " << simboloBloco(tabuleiro[linha][1]) << " |";
+        cout << " " << simboloBloco(tabuleiro[linha][2]) << endl;
+
+        if (linha != 2)
+        {
+            cout << "___ ___ ___\n" << endl;
+        }
+    }
+}
+
+void fazerJogada(int tabuleiro[][3], int jogador, const string &nomeJogador1, const string &nomeJogador2)
+{
+    int linha, coluna;
+    bool entradaValida = false;
+
+    do
+    {
+        cout << (jogador == 0 ? nomeJogador1 : nomeJogador2) << ", é a sua vez!" << endl;
+        cout << "Linha: ";
+        if (cin >> linha)
+        {
+            linha--;
+            if (linha >= 0 && linha < 3)
+                entradaValida = true;
+            else
+                cout << "Linha inválida! Digite um valor entre 1 e 3." << endl;
+        }
+        else
+        {
+            cout << "Entrada inválida! Digite um número inteiro." << endl;
+            limparBufferEntrada();
+        }
+    } while (!entradaValida);
+
+    entradaValida = false;
+
+    do
+    {
+        cout << "Coluna: ";
+        if (cin >> coluna)
+        {
+            coluna--;
+            if (coluna >= 0 && coluna < 3)
+                entradaValida = true;
+            else
+                cout << "Coluna inválida! Digite um valor entre 1 e 3." << endl;
+        }
+        else
+        {
+            cout << "Entrada inválida! Digite um número inteiro." << endl;
+            limparBufferEntrada();
+        }
+    } while (!entradaValida);
+
+    if (jogador == 0)
+        tabuleiro[linha][coluna] = 1;
+    else
+        tabuleiro[linha][coluna] = -1;
+}
+
+int verificarContinuar(int tabuleiro[][3])
+{
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+            if (tabuleiro[i][j] == 0)
+                return 1;
+    return 0;
+}
+
+int verificarVitoria(int tabuleiro[][3])
+{
+    int linha, coluna, soma;
+
+    // Somando as linhas
+    for (linha = 0; linha < 3; linha++)
+    {
+        soma = 0;
+
+        for (coluna = 0; coluna < 3; coluna++)
+            soma += tabuleiro[linha][coluna];
+
+        if (soma == 3)
+            return 1;
+        if (soma == -3)
+            return -1;
+    }
+
+    // Somando as colunas
+    for (coluna = 0; coluna < 3; coluna++)
+    {
+        soma = 0;
+
+        for (linha = 0; linha < 3; linha++)
+            soma += tabuleiro[linha][coluna];
+
+        if (soma == 3)
+            return 1;
+        if (soma == -3)
+            return -1;
+    }
+
+    // Somando as diagonais
+    soma = 0;
+    for (linha = 0; linha < 3; linha++)
+        soma += tabuleiro[linha][linha];
+    if (soma == 3)
+        return 1;
+    if (soma == -3)
+        return -1;
+
+    soma = tabuleiro[0][2] + tabuleiro[1][1] + tabuleiro[2][0];
+    if (soma == 3)
+        return 1;
+    if (soma == -3)
+        return -1;
+
+    return 0;
+}
+
+int jogo(int tabuleiro[][3], const string &nomeJogador1, const string &nomeJogador2)
+{
+    int turno = 0, continuar, vitoria;
+
+    do
+    {
+        limparTela();
+        mostrarTabuleiro(tabuleiro);
+        fazerJogada(tabuleiro, turno % 2, nomeJogador1, nomeJogador2);
+        turno++;
+
+        continuar = verificarContinuar(tabuleiro);
+        vitoria = verificarVitoria(tabuleiro);
+    } while (continuar && !vitoria);
+
+    limparTela();
+    mostrarTabuleiro(tabuleiro);
+
+    if (vitoria == 0)
+    {
+        cout << "Deu velha!" << endl;
+    }
+
+    return vitoria;
+}
+
+void placar(int resultado, int &pontuacaoJogador1, int &pontuacaoJogador2, const string &nomeJogador1, const string &nomeJogador2)
+{
+    if (resultado == 1)
+    {
+        cout << nomeJogador1 << " ganhou!\n" << endl;
+        pontuacaoJogador1++;
+    }
+    else if (resultado == -1)
+    {
+        cout << nomeJogador2 << " ganhou!\n" << endl;
+        pontuacaoJogador2++;
+    }
+    else
+    {
+        cout << "Empate\n" << endl;
+    }
+
+    cout << "Placar: " << endl;
+    cout << nomeJogador1 << ": " << pontuacaoJogador1 << " vitórias" << endl;
+    cout << nomeJogador2 << ": " << pontuacaoJogador2 << " vitórias" << endl;
+}
+
+int main()
+{
+    int tabuleiro[3][3];
+    int continuar = 0, pontuacaoJogador1 = 0, pontuacaoJogador2 = 0, resultado;
+    string nomeJogador1, nomeJogador2;
+
+    // Configurar o locale para Português do Brasil
+    setlocale(LC_ALL, "Portuguese_Brazil");
+
+    cout << "Bem-vindo ao Jogo da Velha!" << endl;
+    cout << "Jogador 1, informe o seu nome: ";
+    getline(cin, nomeJogador1);
+    cout << endl;
+    cout << "Pressione enter novamente para confirmar!";
+    cout << endl;
+    cin.ignore(); // Limpar o caractere de nova linha (\n) no buffer de entrada
+
+    cout << "Jogador 2, informe o seu nome: ";
+    getline(cin, nomeJogador2);
+    cout << endl;
+    cout << "Pressione enter novamente para confirmar!";
+    cout << endl;
+    cin.ignore(); // Limpar o caractere de nova linha (\n) no buffer de entrada
+
+    do
+    {
+        limparTela();
+        inicializarTabuleiro(tabuleiro);
+        resultado = jogo(tabuleiro, nomeJogador1, nomeJogador2);
+        placar(resultado, pontuacaoJogador1, pontuacaoJogador2, nomeJogador1, nomeJogador2);
+
+        cout << "\nOutra partida?" << endl;
+        cout << "0. Sair" << endl;
+        cout << "1. Jogar de novo" << endl;
+        cin >> continuar;
+        limparBufferEntrada(); // Limpar o buffer após a leitura da opção
+    } while (continuar);
+
+    return 0;
+}
